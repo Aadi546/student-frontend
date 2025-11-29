@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useGoogleLogin } from "@react-oauth/google";  // ← ADD THIS IMPORT
 
 function App() {
   const [username, setUsername] = useState("");
@@ -37,31 +38,33 @@ function App() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      // 1. Open Google popup (SIMPLEST method)
-      const googleWindow = window.open(
-        'https://accounts.google.com/o/oauth2/v2/auth?client_id=991222763032-nvlrj4mg3k2pdegrg69gsf7rcb8hptgn.apps.googleusercontent.com&redirect_uri=https://student-backend-lqcc.onrender.com/auth/google/callback&response_type=code&scope=profile%20email',
-        'google-login',
-        'width=500,height=600'
-      );
-
-      // 2. Listen for token from backend callback
-      const checkToken = setInterval(async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        
-        if (token) {
-          setToken(token);
-          localStorage.setItem("jwtToken", token);
-          clearInterval(checkToken);
-          window.history.replaceState({}, document.title, window.location.pathname);
+  // ✅ NEW GOOGLE LOGIN - Uses YOUR backend perfectly
+  const googleLogin = useGoogleLogin({
+    flow: "implicit",
+    onSuccess: async (tokenResponse) => {
+      try {
+        const res = await fetch("https://student-backend-lqcc.onrender.com/auth/google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          setToken(data.token);
+          localStorage.setItem("jwtToken", data.token);
+          setError("");
+        } else {
+          setError(data.error || "Google login failed");
         }
-      }, 1000);
+      } catch (err) {
+        setError("Google login failed");
+      }
+    },
+    onError: () => setError("Google login failed"),
+  });
 
-    } catch (err) {
-      setError("Google login failed");
-    }
+  const handleGoogleLogin = () => {
+    googleLogin();  // ← Simple click → Google popup → Backend → Logged In!
   };
 
   const handleLogout = () => {
@@ -154,7 +157,6 @@ function App() {
           </button>
         </form>
 
-        {/* ✅ PERFECT GOOGLE BUTTON */}
         <div style={{ marginTop: "1rem" }}>
           <button
             onClick={handleGoogleLogin}
