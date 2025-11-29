@@ -11,6 +11,16 @@ function App() {
     if (savedToken) setToken(savedToken);
   }, []);
 
+  // ADD THIS SECOND useEffect (right after first one):
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('success') === 'true') {
+    setToken('google-login-success');
+    localStorage.setItem('jwtToken', 'google-login-success');
+  }
+}, []);
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
