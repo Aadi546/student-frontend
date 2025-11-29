@@ -37,6 +37,33 @@ function App() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      // 1. Open Google popup (SIMPLEST method)
+      const googleWindow = window.open(
+        'https://accounts.google.com/o/oauth2/v2/auth?client_id=991222763032-nvlrj4mg3k2pdegrg69gsf7rcb8hptgn.apps.googleusercontent.com&redirect_uri=https://student-backend-lqcc.onrender.com/auth/google/callback&response_type=code&scope=profile%20email',
+        'google-login',
+        'width=500,height=600'
+      );
+
+      // 2. Listen for token from backend callback
+      const checkToken = setInterval(async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        if (token) {
+          setToken(token);
+          localStorage.setItem("jwtToken", token);
+          clearInterval(checkToken);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }, 1000);
+
+    } catch (err) {
+      setError("Google login failed");
+    }
+  };
+
   const handleLogout = () => {
     setToken("");
     localStorage.removeItem("jwtToken");
@@ -127,10 +154,10 @@ function App() {
           </button>
         </form>
 
-        {/* ✅ FINAL GOOGLE BUTTON - 100% VER CEL COMPATIBLE */}
+        {/* ✅ PERFECT GOOGLE BUTTON */}
         <div style={{ marginTop: "1rem" }}>
           <button
-            onClick={() => window.open('https://student-backend-lqcc.onrender.com/auth/google', '_blank', 'width=500,height=600')}
+            onClick={handleGoogleLogin}
             style={{
               width: "100%",
               padding: "12px 16px",
