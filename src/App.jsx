@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";  // ✅ CHANGED: GoogleLogin component
 
 function App() {
   const [username, setUsername] = useState("");
@@ -40,39 +40,7 @@ function App() {
     }
   };
 
-  // Google login (frontend)
-  const loginWithGoogle = useGoogleLogin({
-  onSuccess: async (googleTokenResponse) => {
-    console.log("FULL Google response:", googleTokenResponse);
-    try {
-      const res = await fetch(
-        "https://student-backend-lqcc.onrender.com/auth/google",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ access_token: googleTokenResponse.access_token }),
-        }
-      );
-
-      const data = await res.json();
-      if (res.ok) {
-        setToken(data.token);
-        localStorage.setItem("jwtToken", data.token);
-        setError("");
-      } else {
-        setError(data.error || "Google login failed");
-      }
-    } catch (err) {
-      setError("Google login failed");
-    }
-  },
-  onError: () => {
-    setError("Google login failed");
-  },
-});
-
   // Logout function
-
   const handleLogout = () => {
     setToken("");
     localStorage.removeItem("jwtToken");
@@ -176,35 +144,42 @@ function App() {
           </button>
         </form>
 
-        {/* Google sign-in button */}
-        <button
-  onClick={() => loginWithGoogle()}
-  style={{
-    width: "100%",
-    padding: "0.75rem 1rem",
-    background: "white",              // ✅ White background
-    color: "#000",                     // ✅ Black text
-    border: "1px solid #dadce0",       // ✅ Light gray border
-    borderRadius: "8px",               // ✅ Rounded corners
-    fontSize: "14px",
-    fontWeight: "500",
-    display: "flex",
-    alignItems: "center",              // ✅ Perfectly centered
-    justifyContent: "center",          // ✅ Horizontally centered
-    gap: "12px",
-    cursor: "pointer",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",  // ✅ Subtle shadow
-  }}
->
-  <img 
-    src="https://developers.google.com/identity/images/g-logo.png" 
-    alt="Google" 
-    style={{width: "18px", height: "18px"}}
-  />
-  Continue with Google
-</button>
-
-
+        {/* ✅ GOOGLELOGIN COMPONENT - REPLACES useGoogleLogin */}
+        <GoogleLogin
+          onSuccess={async (response) => {
+            console.log("Google success:", response);
+            try {
+              const res = await fetch(
+                "https://student-backend-lqcc.onrender.com/auth/google",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ access_token: response.access_token }),
+                }
+              );
+              const data = await res.json();
+              if (res.ok) {
+                setToken(data.token);
+                localStorage.setItem("jwtToken", data.token);
+                setError("");
+              } else {
+                setError(data.error || "Google login failed");
+              }
+            } catch (err) {
+              setError("Google login failed");
+            }
+          }}
+          onError={() => setError("Google login failed")}
+          theme="outline"
+          size="large"
+          text="continue_with"
+          shape="rectangular"
+          width="100%"
+          style={{
+            marginTop: "0.75rem",
+            width: "100%",
+          }}
+        />
       </div>
     </div>
   );
